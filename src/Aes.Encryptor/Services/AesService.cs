@@ -23,6 +23,12 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		var keyByte = Encoding.UTF8.GetBytes(key);
 		var ivByte = iv == null ? null : Encoding.UTF8.GetBytes(iv);
 
+		if (keyByte.Length != 32)
+			throw new ArgumentException("Key length must be 32 bytes.");
+
+		if (ivByte != null && ivByte.Length != 16)
+			throw new ArgumentException("IV length must be 16 bytes.");
+
 		return encryptorType switch
 		{
 			EncryptorType.Aes => AesDecrypt(cipherByte, keyByte, ivByte),
@@ -40,19 +46,25 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		ArgumentNullException.ThrowIfNull(plainText);
 		ArgumentNullException.ThrowIfNull(key);
 
-		var plainByte = Encoding.UTF8.GetBytes(plainText);
+		// var plainByte = Encoding.UTF8.GetBytes(plainText);
 		var keyByte = Encoding.UTF8.GetBytes(key);
 		var ivByte = iv == null ? null : Encoding.UTF8.GetBytes(iv);
 
+		if (keyByte.Length != 32)
+			throw new ArgumentException("Key length must be 32 bytes.");
+
+		if (ivByte != null && ivByte.Length != 16)
+			throw new ArgumentException("IV length must be 16 bytes.");
+
 		return encryptorType switch
 		{
-			EncryptorType.Aes => Convert.ToBase64String(AesEncrypt(plainByte, keyByte, ivByte)),
-			EncryptorType.AesGcm => Convert.ToBase64String(GcmEncrypt(plainByte, keyByte)),
+			EncryptorType.Aes => Convert.ToBase64String(AesEncrypt(plainText, keyByte, ivByte)),
+			EncryptorType.AesGcm => Convert.ToBase64String(GcmEncrypt(Encoding.UTF8.GetBytes(plainText), keyByte)),
 			_ => throw new NotSupportedException()
 		};
 	}
 
-	byte[] AesEncrypt(byte[] plainByte, byte[] keyByte, byte[]? ivByte = null)
+	byte[] AesEncrypt(string plainText, byte[] keyByte, byte[]? ivByte = null)
 	{
 		_logger.LogDebug("Start encrypting using AES.");
 
@@ -67,8 +79,8 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		else
 			aes.IV = ivByte;
 
-		_logger.LogDebug("Key: {Key}", Convert.ToBase64String(aes.Key));
-		_logger.LogDebug("IV: {IV}", Convert.ToBase64String(aes.IV));
+		_logger.LogTrace("Key: {Key}", Encoding.UTF8.GetString(aes.Key));
+		_logger.LogTrace("IV: {IV}", Convert.ToBase64String(aes.IV));
 
 		using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
 		using var memoryStream = new MemoryStream();
@@ -79,9 +91,11 @@ public class AesService(ILogger<AesService> logger) : IAesService
 			memoryStream.Write(aes.IV, 0, aes.IV.Length);
 		}
 
-		using var cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write);
-		using var streamWriter = new StreamWriter(cryptoStream);
-		streamWriter.Write(plainByte);
+		using (var cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write))
+		{
+			using var streamWriter = new StreamWriter(cryptoStream);
+			streamWriter.Write(plainText);
+		}
 
 		return memoryStream.ToArray();
 	}
@@ -168,15 +182,15 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		var ivByte = new byte[ivByteSize];
 		Buffer.BlockCopy(cipherByte, 0, ivByte, 0, ivByte.Length);
 
-		_logger.LogDebug("Extracted IV: {IV}", Convert.ToBase64String(ivByte));
+		_logger.LogDebug("Extracted IV: {IV}", Encoding.UTF8.GetString(ivByte));
 
 		return ivByte;
 	}
 
 	void LogBytes(byte[] keyByte, byte[] nonceByte, byte[] tagByte)
 	{
-		_logger.LogDebug("Key: {Key}", Convert.ToBase64String(keyByte));
-		_logger.LogDebug("Nonce: {Nonce}", Convert.ToBase64String(nonceByte));
-		_logger.LogDebug("Tag: {Tag}", Convert.ToBase64String(tagByte));
+		_logger.LogTrace("Key: {Key}", Encoding.UTF8.GetString(keyByte));
+		_logger.LogTrace("Nonce: {Nonce}", Encoding.UTF8.GetString(nonceByte));
+		_logger.LogTrace("Tag: {Tag}", Encoding.UTF8.GetString(tagByte));
 	}
 }

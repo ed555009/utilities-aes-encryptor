@@ -7,6 +7,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{EC644DA3-469
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aes.Encryptor", "src\Aes.Encryptor\Aes.Encryptor.csproj", "{CB80C9D3-7145-4972-8964-C88117784496}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{028AE21E-B2AD-4BF9-99CD-020E355C4904}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aes.Encryptor.Tests", "test\Aes.Encryptor.Tests\Aes.Encryptor.Tests.csproj", "{3CB1C298-EBC5-409B-BA57-A0FCA6279F6A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,8 +24,13 @@ Global
 		{CB80C9D3-7145-4972-8964-C88117784496}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB80C9D3-7145-4972-8964-C88117784496}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CB80C9D3-7145-4972-8964-C88117784496}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3CB1C298-EBC5-409B-BA57-A0FCA6279F6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3CB1C298-EBC5-409B-BA57-A0FCA6279F6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3CB1C298-EBC5-409B-BA57-A0FCA6279F6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3CB1C298-EBC5-409B-BA57-A0FCA6279F6A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{CB80C9D3-7145-4972-8964-C88117784496} = {EC644DA3-4698-4798-97C4-EB5972234E6B}
+		{3CB1C298-EBC5-409B-BA57-A0FCA6279F6A} = {028AE21E-B2AD-4BF9-99CD-020E355C4904}
 	EndGlobalSection
 EndGlobal
