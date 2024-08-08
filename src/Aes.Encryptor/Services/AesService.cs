@@ -46,7 +46,6 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		ArgumentNullException.ThrowIfNull(plainText);
 		ArgumentNullException.ThrowIfNull(key);
 
-		var plainByte = Encoding.UTF8.GetBytes(plainText);
 		var keyByte = Encoding.UTF8.GetBytes(key);
 		var ivByte = iv == null ? null : Encoding.UTF8.GetBytes(iv);
 
