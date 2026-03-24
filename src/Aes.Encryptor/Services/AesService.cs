@@ -1,8 +1,8 @@
+using System.Security.Cryptography;
+using System.Text;
 using Aes.Encryptor.Enums;
 using Aes.Encryptor.Interfaces;
 using Microsoft.Extensions.Logging;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Aes.Encryptor.Services;
 
@@ -14,7 +14,8 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		string? cipherText,
 		string? key,
 		string? iv = null,
-		EncryptorType encryptorType = EncryptorType.Aes)
+		EncryptorType encryptorType = EncryptorType.Aes
+	)
 	{
 		ArgumentNullException.ThrowIfNull(cipherText);
 		ArgumentNullException.ThrowIfNull(key);
@@ -33,7 +34,7 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		{
 			EncryptorType.Aes => AesDecrypt(cipherByte, keyByte, ivByte),
 			EncryptorType.AesGcm => GcmDecrypt(cipherByte, keyByte),
-			_ => throw new NotSupportedException()
+			_ => throw new NotSupportedException(),
 		};
 	}
 
@@ -41,7 +42,8 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		string? plainText,
 		string? key,
 		string? iv = null,
-		EncryptorType encryptorType = EncryptorType.Aes)
+		EncryptorType encryptorType = EncryptorType.Aes
+	)
 	{
 		ArgumentNullException.ThrowIfNull(plainText);
 		ArgumentNullException.ThrowIfNull(key);
@@ -59,7 +61,7 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		{
 			EncryptorType.Aes => Convert.ToBase64String(AesEncrypt(plainText, keyByte, ivByte)),
 			EncryptorType.AesGcm => Convert.ToBase64String(GcmEncrypt(Encoding.UTF8.GetBytes(plainText), keyByte)),
-			_ => throw new NotSupportedException()
+			_ => throw new NotSupportedException(),
 		};
 	}
 
