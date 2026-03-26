@@ -1,3 +1,4 @@
+using System.Text;
 using Aes.Encryptor.Enums;
 using Aes.Encryptor.Services;
 using Microsoft.Extensions.Logging;
@@ -21,9 +22,14 @@ public class AesServiceTests(ITestOutputHelper testOutputHelper)
 		var service = new AesService(Mock.Of<ILogger<AesService>>());
 
 		// When
-		var result = service.Encrypt(_plainText, key, iv, encryptorType);
+		var result = service.Encrypt(
+			_plainText,
+			Encoding.UTF8.GetBytes(key),
+			iv == null ? null : Encoding.UTF8.GetBytes(iv),
+			encryptorType
+		);
 
-		_testOutputHelper.WriteLine(result);
+		_testOutputHelper.WriteLine("\nEncrypted: " + result.CipherBase64);
 
 		// Then
 		Assert.NotNull(result);
@@ -37,11 +43,16 @@ public class AesServiceTests(ITestOutputHelper testOutputHelper)
 	{
 		// Given
 		var service = new AesService(Mock.Of<ILogger<AesService>>());
-		var encryptedText = service.Encrypt(_plainText, key, iv, encryptorType);
-		_testOutputHelper.WriteLine(encryptedText);
+		var encrypted = service.Encrypt(
+			_plainText,
+			Encoding.UTF8.GetBytes(key),
+			iv == null ? null : Encoding.UTF8.GetBytes(iv),
+			encryptorType
+		);
+		_testOutputHelper.WriteLine(encrypted.CipherBase64);
 
 		// When
-		var result = service.Decrypt(encryptedText, key, iv, encryptorType);
+		var result = service.Decrypt(encrypted.CipherBase64, key, iv, encryptorType);
 
 		_testOutputHelper.WriteLine(result);
 
@@ -59,7 +70,11 @@ public class AesServiceTests(ITestOutputHelper testOutputHelper)
 
 		// When
 		var ex = Assert.Throws<ArgumentNullException>(() =>
-			service.Encrypt(null, "12345678901234567890123456789012", encryptorType: encryptorType)
+			service.Encrypt(
+				null,
+				Encoding.UTF8.GetBytes("12345678901234567890123456789012"),
+				encryptorType: encryptorType
+			)
 		);
 
 		// Then
@@ -128,7 +143,14 @@ public class AesServiceTests(ITestOutputHelper testOutputHelper)
 		var service = new AesService(Mock.Of<ILogger<AesService>>());
 
 		// When
-		var ex = Assert.Throws<ArgumentException>(() => service.Encrypt(_plainText, key, iv, encryptorType));
+		var ex = Assert.Throws<ArgumentException>(() =>
+			service.Encrypt(
+				_plainText,
+				Encoding.UTF8.GetBytes(key),
+				iv == null ? null : Encoding.UTF8.GetBytes(iv),
+				encryptorType
+			)
+		);
 
 		// Then
 		Assert.NotNull(ex);
@@ -145,12 +167,14 @@ public class AesServiceTests(ITestOutputHelper testOutputHelper)
 		var service = new AesService(Mock.Of<ILogger<AesService>>());
 		var encryptedText = service.Encrypt(
 			_plainText,
-			"12345678901234567890123456789012",
+			Encoding.UTF8.GetBytes("12345678901234567890123456789012"),
 			encryptorType: encryptorType
 		);
 
 		// When
-		var ex = Assert.Throws<ArgumentException>(() => service.Decrypt(encryptedText, key, iv, encryptorType));
+		var ex = Assert.Throws<ArgumentException>(() =>
+			service.Decrypt(encryptedText.CipherBase64, key, iv, encryptorType)
+		);
 
 		// Then
 		Assert.NotNull(ex);

@@ -1,4 +1,5 @@
 using Aes.Encryptor.Enums;
+using Aes.Encryptor.Models.Responses;
 
 namespace Aes.Encryptor.Interfaces;
 
@@ -8,14 +9,19 @@ namespace Aes.Encryptor.Interfaces;
 public interface IAesService
 {
 	/// <summary>
-	/// Encrypts the specified plain text using AES encryption.
+	/// Encrypts the specified plain text using AES encryption and returns an EncryptedModel containing the cipher, IV, and authentication tag (if applicable).
 	/// </summary>
 	/// <param name="plainText">The plain text to encrypt.</param>
-	/// <param name="key">The encryption key.</param>
-	/// <param name="iv">The initialization vector (optional).</param>
+	/// <param name="keyByte">The encryption key as a byte array.</param>
+	/// <param name="ivByte">The initialization vector as a byte array (optional).</param>
 	/// <param name="encryptorType">The type of AES encryptor to use (default is AES).</param>
-	/// <returns>The encrypted cipher text.</returns>
-	string Encrypt(string? plainText, string? key, string? iv = null, EncryptorType encryptorType = EncryptorType.Aes);
+	/// <returns>An EncryptedModel containing the cipher, IV, and authentication tag (if applicable).</returns>
+	EncryptedModel Encrypt(
+		string? plainText,
+		byte[]? keyByte,
+		byte[]? ivByte = null,
+		EncryptorType encryptorType = EncryptorType.Aes
+	);
 
 	/// <summary>
 	/// Decrypts the specified cipher text using AES decryption.
