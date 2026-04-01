@@ -29,7 +29,7 @@ public class AesServiceTests(ITestOutputHelper testOutputHelper)
 			encryptorType
 		);
 
-		_testOutputHelper.WriteLine("\nEncrypted: " + result.CipherBase64);
+		_testOutputHelper.WriteLine("\nEncrypted: " + result.CipherBase64 + "\n");
 
 		// Then
 		Assert.NotNull(result);
@@ -49,12 +49,18 @@ public class AesServiceTests(ITestOutputHelper testOutputHelper)
 			iv == null ? null : Encoding.UTF8.GetBytes(iv),
 			encryptorType
 		);
-		_testOutputHelper.WriteLine(encrypted.CipherBase64);
+		_testOutputHelper.WriteLine("\nEncrypted: " + encrypted.CipherBase64 + "\n");
 
 		// When
-		var result = service.Decrypt(encrypted.CipherBase64, key, iv, encryptorType);
+		var result = service.Decrypt(
+			encrypted.Cipher,
+			Encoding.UTF8.GetBytes(key),
+			iv == null ? null : Encoding.UTF8.GetBytes(iv),
+			null,
+			encryptorType
+		);
 
-		_testOutputHelper.WriteLine(result);
+		_testOutputHelper.WriteLine("\nResult: " + result + "\n");
 
 		// Then
 		Assert.Equal(_plainText, result);
