@@ -24,12 +24,19 @@ public interface IAesService
 	);
 
 	/// <summary>
-	/// Decrypts the specified cipher text using AES decryption.
+	/// Decrypts the specified cipher text using AES decryption and returns the original plain text. The method validates the key and IV lengths and supports both AES and AES-GCM decryption based on the specified encryptor type.
 	/// </summary>
-	/// <param name="cipherText">The cipher text to decrypt.</param>
-	/// <param name="key">The decryption key.</param>
-	/// <param name="iv">The initialization vector (optional).</param>
+	/// <param name="cipherByte">The cipher text to decrypt as a byte array.</param>
+	/// <param name="keyByte">The decryption key as a byte array.</param>
+	/// <param name="ivByte">The initialization vector as a byte array (optional).</param>
+	/// <param name="tagByte">The authentication tag as a byte array (optional, applicable for AES-GCM).</param>
 	/// <param name="encryptorType">The type of AES encryptor to use (default is AES).</param>
 	/// <returns>The decrypted plain text.</returns>
-	string Decrypt(string? cipherText, string? key, string? iv = null, EncryptorType encryptorType = EncryptorType.Aes);
+	string Decrypt(
+		byte[]? cipherByte,
+		byte[]? keyByte,
+		byte[]? ivByte = null,
+		byte[]? tagByte = null,
+		EncryptorType encryptorType = EncryptorType.Aes
+	);
 }
