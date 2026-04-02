@@ -29,8 +29,8 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		if (keyByte.Length != 32)
 			throw new ArgumentException("Key length must be 32 bytes.");
 
-		if (ivByte != null && ivByte.Length != 16)
-			throw new ArgumentException("IV length must be 16 bytes.");
+		if (ivByte != null && (ivByte.Length != 12 && ivByte.Length != 16))
+			throw new ArgumentException("IV length must be 12 or 16 bytes.");
 
 		return encryptorType switch
 		{

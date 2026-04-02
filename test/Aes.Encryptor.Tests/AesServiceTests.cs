@@ -55,8 +55,8 @@ public class AesServiceTests(ITestOutputHelper testOutputHelper)
 		var result = service.Decrypt(
 			encrypted.Cipher,
 			Encoding.UTF8.GetBytes(key),
-			iv == null ? null : Encoding.UTF8.GetBytes(iv),
-			null,
+			encrypted.Iv,
+			encrypted.Tag,
 			encryptorType
 		);
 
@@ -97,7 +97,11 @@ public class AesServiceTests(ITestOutputHelper testOutputHelper)
 
 		// When
 		var ex = Assert.Throws<ArgumentNullException>(() =>
-			service.Decrypt(null, "12345678901234567890123456789012", encryptorType: encryptorType)
+			service.Decrypt(
+				null,
+				Encoding.UTF8.GetBytes("12345678901234567890123456789012"),
+				encryptorType: encryptorType
+			)
 		);
 
 		// Then
@@ -131,7 +135,7 @@ public class AesServiceTests(ITestOutputHelper testOutputHelper)
 
 		// When
 		var ex = Assert.Throws<ArgumentNullException>(() =>
-			service.Decrypt(_plainText, null, encryptorType: encryptorType)
+			service.Decrypt(Encoding.UTF8.GetBytes(_plainText), null, encryptorType: encryptorType)
 		);
 
 		// Then
@@ -179,7 +183,13 @@ public class AesServiceTests(ITestOutputHelper testOutputHelper)
 
 		// When
 		var ex = Assert.Throws<ArgumentException>(() =>
-			service.Decrypt(encryptedText.CipherBase64, key, iv, encryptorType)
+			service.Decrypt(
+				encryptedText.Cipher,
+				Encoding.UTF8.GetBytes(key),
+				Encoding.UTF8.GetBytes(iv),
+				encryptedText.Tag,
+				encryptorType
+			)
 		);
 
 		// Then
