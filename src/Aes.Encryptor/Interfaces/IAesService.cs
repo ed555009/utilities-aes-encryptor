@@ -1,4 +1,5 @@
 using Aes.Encryptor.Enums;
+using Aes.Encryptor.Models.Responses;
 
 namespace Aes.Encryptor.Interfaces;
 
@@ -8,22 +9,34 @@ namespace Aes.Encryptor.Interfaces;
 public interface IAesService
 {
 	/// <summary>
-	/// Encrypts the specified plain text using AES encryption.
+	/// Encrypts the specified plain text using AES encryption and returns an EncryptedModel containing the cipher, IV, and authentication tag (if applicable).
 	/// </summary>
 	/// <param name="plainText">The plain text to encrypt.</param>
-	/// <param name="key">The encryption key.</param>
-	/// <param name="iv">The initialization vector (optional).</param>
+	/// <param name="keyByte">The encryption key as a byte array.</param>
+	/// <param name="ivByte">The initialization vector as a byte array (optional).</param>
 	/// <param name="encryptorType">The type of AES encryptor to use (default is AES).</param>
-	/// <returns>The encrypted cipher text.</returns>
-	string Encrypt(string? plainText, string? key, string? iv = null, EncryptorType encryptorType = EncryptorType.Aes);
+	/// <returns>An EncryptedModel containing the cipher, IV, and authentication tag (if applicable).</returns>
+	EncryptedModel Encrypt(
+		string? plainText,
+		byte[]? keyByte,
+		byte[]? ivByte = null,
+		EncryptorType encryptorType = EncryptorType.Aes
+	);
 
 	/// <summary>
-	/// Decrypts the specified cipher text using AES decryption.
+	/// Decrypts the specified cipher text using AES decryption and returns the original plain text. The method validates the key and IV lengths and supports both AES and AES-GCM decryption based on the specified encryptor type.
 	/// </summary>
-	/// <param name="cipherText">The cipher text to decrypt.</param>
-	/// <param name="key">The decryption key.</param>
-	/// <param name="iv">The initialization vector (optional).</param>
+	/// <param name="cipherByte">The cipher text to decrypt as a byte array.</param>
+	/// <param name="keyByte">The decryption key as a byte array.</param>
+	/// <param name="ivByte">The initialization vector as a byte array (optional).</param>
+	/// <param name="tagByte">The authentication tag as a byte array (optional, applicable for AES-GCM).</param>
 	/// <param name="encryptorType">The type of AES encryptor to use (default is AES).</param>
 	/// <returns>The decrypted plain text.</returns>
-	string Decrypt(string? cipherText, string? key, string? iv = null, EncryptorType encryptorType = EncryptorType.Aes);
+	string Decrypt(
+		byte[]? cipherByte,
+		byte[]? keyByte,
+		byte[]? ivByte = null,
+		byte[]? tagByte = null,
+		EncryptorType encryptorType = EncryptorType.Aes
+	);
 }

@@ -1,8 +1,9 @@
-using Aes.Encryptor.Enums;
-using Aes.Encryptor.Interfaces;
-using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
+using Aes.Encryptor.Enums;
+using Aes.Encryptor.Interfaces;
+using Aes.Encryptor.Models.Responses;
+using Microsoft.Extensions.Logging;
 
 namespace Aes.Encryptor.Services;
 
@@ -11,43 +12,46 @@ public class AesService(ILogger<AesService> logger) : IAesService
 	private readonly ILogger<AesService> _logger = logger;
 
 	public string Decrypt(
-		string? cipherText,
-		string? key,
-		string? iv = null,
-		EncryptorType encryptorType = EncryptorType.Aes)
+		byte[]? cipherByte,
+		byte[]? keyByte,
+		byte[]? ivByte = null,
+		byte[]? tagByte = null,
+		EncryptorType encryptorType = EncryptorType.Aes
+	)
 	{
-		ArgumentNullException.ThrowIfNull(cipherText);
-		ArgumentNullException.ThrowIfNull(key);
+		ArgumentNullException.ThrowIfNull(cipherByte);
+		ArgumentNullException.ThrowIfNull(keyByte);
 
-		var cipherByte = Convert.FromBase64String(cipherText);
-		var keyByte = Encoding.UTF8.GetBytes(key);
-		var ivByte = iv == null ? null : Encoding.UTF8.GetBytes(iv);
+		// var cipherByte = Convert.FromBase64String(cipherText);
+		// var keyByte = Encoding.UTF8.GetBytes(key);
+		// var ivByte = iv == null ? null : Encoding.UTF8.GetBytes(iv);
 
 		if (keyByte.Length != 32)
 			throw new ArgumentException("Key length must be 32 bytes.");
 
-		if (ivByte != null && ivByte.Length != 16)
-			throw new ArgumentException("IV length must be 16 bytes.");
+		if (ivByte != null && (ivByte.Length != 12 && ivByte.Length != 16))
+			throw new ArgumentException("IV length must be 12 or 16 bytes.");
 
 		return encryptorType switch
 		{
 			EncryptorType.Aes => AesDecrypt(cipherByte, keyByte, ivByte),
-			EncryptorType.AesGcm => GcmDecrypt(cipherByte, keyByte),
-			_ => throw new NotSupportedException()
+			EncryptorType.AesGcm => GcmDecrypt(cipherByte, keyByte, ivByte, tagByte),
+			_ => throw new NotSupportedException(),
 		};
 	}
 
-	public string Encrypt(
+	public EncryptedModel Encrypt(
 		string? plainText,
-		string? key,
-		string? iv = null,
-		EncryptorType encryptorType = EncryptorType.Aes)
+		byte[]? keyByte,
+		byte[]? ivByte = null,
+		EncryptorType encryptorType = EncryptorType.Aes
+	)
 	{
 		ArgumentNullException.ThrowIfNull(plainText);
-		ArgumentNullException.ThrowIfNull(key);
+		ArgumentNullException.ThrowIfNull(keyByte);
 
-		var keyByte = Encoding.UTF8.GetBytes(key);
-		var ivByte = iv == null ? null : Encoding.UTF8.GetBytes(iv);
+		// var keyByte = Encoding.UTF8.GetBytes(key);
+		// var ivByte = iv == null ? null : Encoding.UTF8.GetBytes(iv);
 
 		if (keyByte.Length != 32)
 			throw new ArgumentException("Key length must be 32 bytes.");
@@ -57,13 +61,13 @@ public class AesService(ILogger<AesService> logger) : IAesService
 
 		return encryptorType switch
 		{
-			EncryptorType.Aes => Convert.ToBase64String(AesEncrypt(plainText, keyByte, ivByte)),
-			EncryptorType.AesGcm => Convert.ToBase64String(GcmEncrypt(Encoding.UTF8.GetBytes(plainText), keyByte)),
-			_ => throw new NotSupportedException()
+			EncryptorType.Aes => AesEncrypt(plainText, keyByte, ivByte),
+			EncryptorType.AesGcm => GcmEncrypt(Encoding.UTF8.GetBytes(plainText), keyByte, ivByte),
+			_ => throw new NotSupportedException(),
 		};
 	}
 
-	byte[] AesEncrypt(string plainText, byte[] keyByte, byte[]? ivByte = null)
+	EncryptedModel AesEncrypt(string plainText, byte[] keyByte, byte[]? ivByte = null)
 	{
 		_logger.LogDebug("Start encrypting using AES.");
 
@@ -84,11 +88,11 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
 		using var memoryStream = new MemoryStream();
 
-		if (ivByte == null)
-		{
-			_logger.LogDebug("IV is not provided. Writing IV to memory stream.");
-			memoryStream.Write(aes.IV, 0, aes.IV.Length);
-		}
+		// if (ivByte == null)
+		// {
+		// 	_logger.LogDebug("IV is not provided. Writing IV to memory stream.");
+		// 	memoryStream.Write(aes.IV, 0, aes.IV.Length);
+		// }
 
 		using (var cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write))
 		{
@@ -96,7 +100,7 @@ public class AesService(ILogger<AesService> logger) : IAesService
 			streamWriter.Write(plainText);
 		}
 
-		return memoryStream.ToArray();
+		return new EncryptedModel { Cipher = memoryStream.ToArray(), Iv = aes.IV };
 	}
 
 	string AesDecrypt(byte[] cipherByte, byte[] keyByte, byte[]? ivByte = null)
@@ -128,45 +132,75 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		return streamReader.ReadToEnd();
 	}
 
-	byte[] GcmEncrypt(byte[] plainByte, byte[] keyByte)
+	EncryptedModel GcmEncrypt(byte[] plainByte, byte[] keyByte, byte[]? nonceByte = null)
 	{
 		_logger.LogDebug("Start encrypting using AESGCM.");
 
 		using var aesgcm = new AesGcm(keyByte, AesGcm.TagByteSizes.MaxSize);
-		var nonceByte = new byte[AesGcm.NonceByteSizes.MaxSize];
-		var cipherText = new byte[plainByte.Length];
+		// var nonceByte = new byte[AesGcm.NonceByteSizes.MaxSize];
+		var cipherByte = new byte[plainByte.Length];
 		var tagByte = new byte[AesGcm.TagByteSizes.MaxSize];
-		RandomNumberGenerator.Fill(nonceByte);
+
+		if (nonceByte == null)
+		{
+			nonceByte = new byte[AesGcm.NonceByteSizes.MaxSize];
+			RandomNumberGenerator.Fill(nonceByte);
+		}
 
 		LogBytes(keyByte, nonceByte, tagByte);
 
-		aesgcm.Encrypt(nonceByte, plainByte, cipherText, tagByte);
+		aesgcm.Encrypt(nonceByte, plainByte, cipherByte, tagByte);
 
-		byte[] encryptedBytes = new byte[nonceByte.Length + cipherText.Length + tagByte.Length];
-		Buffer.BlockCopy(nonceByte, 0, encryptedBytes, 0, nonceByte.Length);
-		Buffer.BlockCopy(cipherText, 0, encryptedBytes, nonceByte.Length, cipherText.Length);
-		Buffer.BlockCopy(tagByte, 0, encryptedBytes, nonceByte.Length + cipherText.Length, tagByte.Length);
+		// byte[] encryptedBytes = new byte[nonceByte.Length + cipherByte.Length + tagByte.Length];
+		// Buffer.BlockCopy(nonceByte, 0, encryptedBytes, 0, nonceByte.Length);
+		// Buffer.BlockCopy(cipherByte, 0, encryptedBytes, nonceByte.Length, cipherByte.Length);
+		// Buffer.BlockCopy(tagByte, 0, encryptedBytes, nonceByte.Length + cipherByte.Length, tagByte.Length);
 
-		return encryptedBytes;
+		return new EncryptedModel
+		{
+			Cipher = cipherByte,
+			Iv = nonceByte,
+			Tag = tagByte,
+		};
 	}
 
-	string GcmDecrypt(byte[] cipherByte, byte[] keyByte)
+	string GcmDecrypt(byte[] cipherByte, byte[] keyByte, byte[]? nonceByte = null, byte[]? tagByte = null)
 	{
 		_logger.LogDebug("Start decrypting using AESGCM.");
 
-		var nonceByte = new byte[AesGcm.NonceByteSizes.MaxSize];
-		var cipherTextByte = new byte[cipherByte.Length - nonceByte.Length - AesGcm.TagByteSizes.MaxSize];
-		var tagByte = new byte[AesGcm.TagByteSizes.MaxSize];
+		if (nonceByte != null && tagByte == null)
+			throw new ArgumentNullException(nameof(tagByte), "Tag must be provided when Nonce(IV) is provided.");
 
-		Buffer.BlockCopy(cipherByte, 0, nonceByte, 0, nonceByte.Length);
-		Buffer.BlockCopy(cipherByte, nonceByte.Length, cipherTextByte, 0, cipherTextByte.Length);
-		Buffer.BlockCopy(cipherByte, nonceByte.Length + cipherTextByte.Length, tagByte, 0, tagByte.Length);
+		byte[] encryptedContentByte;
 
-		LogBytes(keyByte, nonceByte, tagByte);
+		if (nonceByte == null)
+		{
+			_logger.LogDebug("Nonce(IV) is not provided. Try extracting Nonce(IV) and Tag from cipherByte.");
+
+			nonceByte = new byte[AesGcm.NonceByteSizes.MaxSize];
+			tagByte = new byte[AesGcm.TagByteSizes.MaxSize];
+			encryptedContentByte = new byte[cipherByte.Length - nonceByte.Length - tagByte.Length];
+
+			Buffer.BlockCopy(cipherByte, 0, nonceByte, 0, nonceByte.Length);
+			Buffer.BlockCopy(cipherByte, nonceByte.Length, encryptedContentByte, 0, encryptedContentByte.Length);
+			Buffer.BlockCopy(cipherByte, nonceByte.Length + encryptedContentByte.Length, tagByte, 0, tagByte.Length);
+		}
+		else
+			encryptedContentByte = cipherByte;
+
+		// var nonceByte = new byte[AesGcm.NonceByteSizes.MaxSize];
+		// var cipherTextByte = new byte[cipherByte.Length - nonceByte.Length - AesGcm.TagByteSizes.MaxSize];
+		// var tagByte = new byte[AesGcm.TagByteSizes.MaxSize];
+
+		// Buffer.BlockCopy(cipherByte, 0, nonceByte, 0, nonceByte.Length);
+		// Buffer.BlockCopy(cipherByte, nonceByte.Length, cipherTextByte, 0, cipherTextByte.Length);
+		// Buffer.BlockCopy(cipherByte, nonceByte.Length + cipherTextByte.Length, tagByte, 0, tagByte.Length);
+
+		LogBytes(keyByte, nonceByte, tagByte!);
 
 		using var aesgcm = new AesGcm(keyByte, AesGcm.TagByteSizes.MaxSize);
-		var decryptedByte = new byte[cipherTextByte.Length];
-		aesgcm.Decrypt(nonceByte, cipherTextByte, tagByte, decryptedByte);
+		var decryptedByte = new byte[encryptedContentByte.Length];
+		aesgcm.Decrypt(nonceByte, encryptedContentByte, tagByte!, decryptedByte);
 
 		return Encoding.UTF8.GetString(decryptedByte);
 	}

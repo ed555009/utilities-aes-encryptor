@@ -13,5 +13,5 @@ public enum EncryptorType
 	/// <summary>
 	/// AES-GCM encryptor.
 	/// </summary>
-	AesGcm
+	AesGcm,
 }

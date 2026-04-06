@@ -50,10 +50,10 @@ public class MyProcess
 		_aesService = aesService;
 
 	public string EncryptSomething() =>
-		_aesService.Encrypt("PlainText", "Key", "IV");
+		_aesService.Encrypt("PlainText", Encoding.UTF8.GetBytes(key), Encoding.UTF8.GetBytes(iv));
 
 	public string DecryptSomething() =>
-		_aesService.Decrypt("CipherText", "Key", "IV");
+		_aesService.Decrypt(encrypted.Cipher, Encoding.UTF8.GetBytes(key), Encoding.UTF8.GetBytes(iv));
 }
 ```
 
@@ -61,12 +61,21 @@ public class MyProcess
 
 You can use `AES-256-GCM` encryption/decryption by specifying the `EncryptorType` parameter.
 
-`Nonce` (IV) and `Tag` is generated automatically, provided Nonce(IV) will be ignored.
-
 ```csharp
 public string GcmEncryptSomething() =>
-	_aesService.Encrypt("PlainText", "Key", encryptorType: EncryptorType.AesGcm);
+	_aesService.Encrypt(
+		"PlainText",
+		Encoding.UTF8.GetBytes(key),
+		Encoding.UTF8.GetBytes(iv),
+		EncryptorType.AesGcm
+	);
 
 public string GcmDecryptSomething() =>
-	_aesService.Decrypt("CipherText", "Key",  encryptorType: EncryptorType.AesGcm);
+	_aesService.Decrypt(
+		encrypted.Cipher,
+		Encoding.UTF8.GetBytes(key),
+		encrypted.Iv,
+		encrypted.Tag,
+		EncryptorType.AesGcm
+	);
 ```
