@@ -22,10 +22,6 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		ArgumentNullException.ThrowIfNull(cipherByte);
 		ArgumentNullException.ThrowIfNull(keyByte);
 
-		// var cipherByte = Convert.FromBase64String(cipherText);
-		// var keyByte = Encoding.UTF8.GetBytes(key);
-		// var ivByte = iv == null ? null : Encoding.UTF8.GetBytes(iv);
-
 		if (keyByte.Length != 32)
 			throw new ArgumentException("Key length must be 32 bytes.");
 
@@ -49,9 +45,6 @@ public class AesService(ILogger<AesService> logger) : IAesService
 	{
 		ArgumentNullException.ThrowIfNull(plainText);
 		ArgumentNullException.ThrowIfNull(keyByte);
-
-		// var keyByte = Encoding.UTF8.GetBytes(key);
-		// var ivByte = iv == null ? null : Encoding.UTF8.GetBytes(iv);
 
 		if (keyByte.Length != 32)
 			throw new ArgumentException("Key length must be 32 bytes.");
@@ -87,13 +80,6 @@ public class AesService(ILogger<AesService> logger) : IAesService
 
 		using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
 		using var memoryStream = new MemoryStream();
-
-		// if (ivByte == null)
-		// {
-		// 	_logger.LogDebug("IV is not provided. Writing IV to memory stream.");
-		// 	memoryStream.Write(aes.IV, 0, aes.IV.Length);
-		// }
-
 		using (var cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write))
 		{
 			using var streamWriter = new StreamWriter(cryptoStream);
@@ -137,7 +123,6 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		_logger.LogDebug("Start encrypting using AESGCM.");
 
 		using var aesgcm = new AesGcm(keyByte, AesGcm.TagByteSizes.MaxSize);
-		// var nonceByte = new byte[AesGcm.NonceByteSizes.MaxSize];
 		var cipherByte = new byte[plainByte.Length];
 		var tagByte = new byte[AesGcm.TagByteSizes.MaxSize];
 
@@ -150,11 +135,6 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		LogBytes(keyByte, nonceByte, tagByte);
 
 		aesgcm.Encrypt(nonceByte, plainByte, cipherByte, tagByte);
-
-		// byte[] encryptedBytes = new byte[nonceByte.Length + cipherByte.Length + tagByte.Length];
-		// Buffer.BlockCopy(nonceByte, 0, encryptedBytes, 0, nonceByte.Length);
-		// Buffer.BlockCopy(cipherByte, 0, encryptedBytes, nonceByte.Length, cipherByte.Length);
-		// Buffer.BlockCopy(tagByte, 0, encryptedBytes, nonceByte.Length + cipherByte.Length, tagByte.Length);
 
 		return new EncryptedModel
 		{
@@ -187,14 +167,6 @@ public class AesService(ILogger<AesService> logger) : IAesService
 		}
 		else
 			encryptedContentByte = cipherByte;
-
-		// var nonceByte = new byte[AesGcm.NonceByteSizes.MaxSize];
-		// var cipherTextByte = new byte[cipherByte.Length - nonceByte.Length - AesGcm.TagByteSizes.MaxSize];
-		// var tagByte = new byte[AesGcm.TagByteSizes.MaxSize];
-
-		// Buffer.BlockCopy(cipherByte, 0, nonceByte, 0, nonceByte.Length);
-		// Buffer.BlockCopy(cipherByte, nonceByte.Length, cipherTextByte, 0, cipherTextByte.Length);
-		// Buffer.BlockCopy(cipherByte, nonceByte.Length + cipherTextByte.Length, tagByte, 0, tagByte.Length);
 
 		LogBytes(keyByte, nonceByte, tagByte!);
 
